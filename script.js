@@ -1,7 +1,12 @@
+function createElement(tag, className=null) {
+  var el = document.createElement(tag);
+  if(className) { el.className += className; }
+  return el;
+}
+
 function createHoverWord(word, definition) {
-  var span = document.createElement("span");
+  var span = createElement("span", "word");
   span.textContent = word;
-  span.className += "word";
   span.addEventListener("mouseover", function() {
     document.getElementById("definition").appendChild(document.createTextNode(definition));
     document.getElementById("word").appendChild(document.createTextNode(word));
@@ -14,8 +19,7 @@ function createHoverWord(word, definition) {
 }
 
 function generateSlide(words) {
-  var slide = document.createElement("div");
-  slide.className += "slide";
+  var slide = createElement("div", "slide");
 
   for(var word in words) {
     slide.appendChild(createHoverWord(word, words[word]));
