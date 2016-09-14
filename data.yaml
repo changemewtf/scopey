@@ -1,0 +1,8 @@
+slides:
+  - code: var myHometown = "Hades";
+    words:
+      var: a JavaScript keyword used to declare variables
+      myHometown: a variable name
+      =: the assignment operator
+      '"Hades"': a string literal enclosed in double-quotes
+      ';': a semicolon

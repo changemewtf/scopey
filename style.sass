@@ -1,0 +1,49 @@
+body
+  font-size: 18px
+  font-family: Courier, monospace
+
+#wrapper
+  width: 960px
+  margin: 0 auto
+
+  .slide
+    font-size: 20px
+
+  #slides
+    padding: 5px
+    background: #efefef
+    border: 1px solid black
+    height: 100px
+
+  #tooltip
+    height: 45px
+
+    #word, #definition
+      box-sizing: border-box
+      display: inline-block
+      height: 100%
+      border: 1px solid black
+      border-top: 0
+      vertical-align: top
+      padding: 10px
+
+    #word
+      width: 20%
+      background: cornflowerblue
+      border-right: 0
+      text-align: center
+      font-weight: bold
+
+    #definition
+      width: 80%
+      background: aliceblue
+      border-left: 0
+      font-family: Lato, Verdana
+
+.word
+  cursor: pointer
+  display: inline-block
+  padding: 3px
+
+  &:hover
+    background: wheat
