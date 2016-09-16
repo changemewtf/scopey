@@ -1,32 +1,54 @@
-function createElement(tag, className=null) {
+var elDefinition = document.getElementById("definition");
+var elWord = document.getElementById("word");
+var elSlides = document.getElementById("slides");
+
+function createElement(tag, className, tap) {
   var el = document.createElement(tag);
   if(className) { el.className += className; }
+  if(tap) { tap(el) };
   return el;
 }
 
-function createHoverWord(word, definition) {
-  var span = createElement("span", "word");
-  span.textContent = word;
-  span.addEventListener("mouseover", function() {
-    document.getElementById("definition").appendChild(document.createTextNode(definition));
-    document.getElementById("word").appendChild(document.createTextNode(word));
+function createShowMetaListener(element, word, definition) {
+  element.addEventListener("mouseover", function() {
+    elDefinition.appendChild(document.createTextNode(definition));
+    elWord.appendChild(document.createTextNode(word));
   });
-  span.addEventListener("mouseout", function() {
-    document.getElementById("definition").innerHTML = "";
-    document.getElementById("word").innerHTML = "";
-  });
-  return span;
 }
 
-function generateSlide(words) {
-  var slide = createElement("div", "slide");
-
-  for(var word in words) {
-    slide.appendChild(createHoverWord(word, words[word]));
-  }
-
-  return slide;
+function createHideMetaListener(element) {
+  element.addEventListener("mouseout", function() {
+    elDefinition.innerHTML = "";
+    elWord.innerHTML = "";
+  });
 }
 
-var slide = generateSlide(data["slides"][0]["words"]);
-document.getElementById("slides").appendChild(slide);
+function createHoverWord(word, definitionKey) {
+  return createElement("span", "word", function(span) {
+    span.textContent = word;
+    span.className += " " + definitionKey;
+    createShowMetaListener(span, word, data["definitions"][definitionKey]);
+    createHideMetaListener(span);
+  });
+}
+
+function attachSemicolon(elSlide) {
+  elSlide.lastChild.className += " precedes-a-semicolon";
+  elSlide.appendChild(createHoverWord(";", "semicolon"));
+}
+
+function generateSlide(slide) {
+  return createElement("div", "slide", function(elDiv) {
+    slide["words"].forEach(function(word) {
+      elDiv.appendChild(createHoverWord(word.text, word.key));
+    });
+
+    if(slide.semi) {
+      attachSemicolon(elDiv);
+    }
+  });
+}
+
+data["slides"].forEach(function(slide) {
+  elSlides.appendChild(generateSlide(slide));
+});

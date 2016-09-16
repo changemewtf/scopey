@@ -1,8 +1,54 @@
+definitions:
+  keywordVar: a builtin JavaScript keyword used to declare variables
+
+  varName: a variable name
+
+  opAssign: the assignment operator
+
+  litStringDQ: a string literal enclosed in double-quotes
+
+  semicolon: a semicolon
+
+  htmlOpenAngle: an opening angle bracket
+  htmlTagName: the tag name
+  htmlAttrName: an attribute name
+  htmlAttrValue: an attribute value
+  htmlCloseAngle: a closing angle bracket
+  htmlTextContent: the tag's text content
+  htmlClosingTag: the start of a closing tag
+
 slides:
-  - code: var myHometown = "Hades";
+  - semi: true
     words:
-      var: a JavaScript keyword used to declare variables
-      myHometown: a variable name
-      =: the assignment operator
-      '"Hades"': a string literal enclosed in double-quotes
-      ';': a semicolon
+      - text: var
+        key: keywordVar
+      - text: myHometown
+        key: varName
+      - text: =
+        key: opAssign
+      - text: '"Hades"'
+        key: litStringDQ
+
+  - semi: false
+    words:
+      - text: <
+        key: htmlOpenAngle
+      - text: h1
+        key: htmlTagName
+      - text: id
+        key: htmlAttrName
+      - text: =
+        key: opAssign
+      - text: '"title"'
+        key: htmlAttrValue
+      - text: '>'
+        key: htmlCloseAngle
+      - text: My Cool Blog
+        key: htmlTextContent
+      - text: </
+        key: htmlClosingTag
+      - text: h1
+        key: htmlTagName
+      - text: '>'
+        key: htmlCloseAngle
+
