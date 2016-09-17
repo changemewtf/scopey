@@ -16,23 +16,20 @@ var Tooltip = {
   word: document.getElementById("word"),
   definition: document.getElementById("definition"),
 
-  display: function(event) {
-    this.word.appendChild(event.currentTarget.word);
-    this.definition.appendChild(event.currentTarget.definition);
-    event.stopPropagation();
-  },
-
-  hide: function(event) {
-    this.word.removeChild(event.currentTarget.word);
-    this.definition.removeChild(event.currentTarget.definition);
-    event.stopPropagation();
+  toggle: function(action, word, definition) {
+    this.word[action](word);
+    this.definition[action](definition);
   },
 
   createTooltipListeners: function(element, word, definition) {
-    element.word = word;
-    element.definition = definition;
-    element.addEventListener("mouseover", this.display.bind(this), true);
-    element.addEventListener("mouseout", this.hide.bind(this), true);
+    element.addEventListener("mouseover", (event) => {
+      this.toggle("appendChild", word, definition);
+      event.stopPropagation();
+    }, true);
+    element.addEventListener("mouseout", (event) => {
+      this.toggle("removeChild", word, definition);
+      event.stopPropagation();
+    }, true);
   },
 
   createHover: function(word, definition) {
