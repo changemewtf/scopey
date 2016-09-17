@@ -13,22 +13,19 @@ function build(tag, options) {
 }
 
 var Tooltip = {
-  word: document.getElementById("word"),
-  definition: document.getElementById("definition"),
+  element: document.getElementById("tooltip"),
 
   toggle: function(action, word, definition) {
-    this.word[action](word);
-    this.definition[action](definition);
+    this.element[action](word);
+    this.element[action](definition);
   },
 
   createTooltipListeners: function(element, word, definition) {
     element.addEventListener("mouseover", (event) => {
       this.toggle("appendChild", word, definition);
-      event.stopPropagation();
     }, true);
     element.addEventListener("mouseout", (event) => {
       this.toggle("removeChild", word, definition);
-      event.stopPropagation();
     }, true);
   },
 
@@ -36,15 +33,11 @@ var Tooltip = {
     var hover = build("span", {className: "word"});
     this.createTooltipListeners(
       hover,
-      document.createTextNode(word),
-      document.createTextNode(definition)
+      build("div", {className: "word", text: word}),
+      build("div", {className: "definition", text: definition})
     );
     return hover;
   },
-
-  appendControls: function(controls) {
-    definition.appendChild(controls);
-  }
 };
 
 var Slides = {
@@ -59,6 +52,10 @@ var Slides = {
       });
       this.element.appendChild(section);
     }.bind(this));
+  },
+
+  appendControls: function(controls) {
+    this.element.appendChild(controls);
   }
 };
 
@@ -139,7 +136,7 @@ var Editor = {
       contains: [this.defInput, this.defButton]
     });
 
-    Tooltip.appendControls(this.defControls);
+    Slides.appendControls(this.defControls);
   }
 };
 
