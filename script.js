@@ -5,6 +5,7 @@ function build(tag, options) {
         className:   copy,
         id:          copy,
         contains:    (k,v) => { v.forEach((c) => element.appendChild(c)) },
+        text:        (k,v) => { element.textContent = v },
         textContent: copy,
         onclick:     copy
       };
@@ -15,33 +16,67 @@ function build(tag, options) {
   return element;
 }
 
-var Tooltip = {
+var TooltipManager = {
   element: document.getElementById("tooltip"),
 
-  toggle: function(action, word, definition) {
-    this.element[action](word);
-    this.element[action](definition);
-  },
-
-  createTooltipListeners: function(element, word, definition) {
+  watch: function(element, definition) {
     element.addEventListener("mouseover", (event) => {
-      this.toggle("appendChild", word, definition);
+      if(!event.firstCaughtBy) { event.firstCaughtBy = element; }
+      this.pushTooltip(event.firstCaughtBy, element, definition);
     }, true);
-    element.addEventListener("mouseout", (event) => {
-      this.toggle("removeChild", word, definition);
-    }, true);
+
+    element.addEventListener("mouseout", this.popTooltip.bind(this), true);
   },
 
-  createHover: function(word, definition) {
-    var hover = build("span", {className: "word"});
-    this.createTooltipListeners(
-      hover,
-      build("div", {className: "word", textContent: word}),
-      build("div", {className: "definition", textContent: definition})
+  pushTooltip: function(outer, target, definition) {
+    this.element.appendChild(
+      build("div", {
+        className: "tooltip",
+        contains: [
+          build("div", {className: "word", contains: [
+            this.buildAlignedWord(outer, target)
+          ]}),
+          build("div", {className: "definition", text: definition})
+        ]
+      })
     );
-    return hover;
   },
+
+  buildAlignedWord: function(outer, target) {
+    return this.deepCopy(outer, function(copy, original) {
+      if(original.nodeType === Node.ELEMENT_NODE) {
+        copy.classList.remove("word");
+      }
+      if(original === target) {
+        copy.className += " shown";
+      }
+    });
+  },
+
+  deepCopy: function(original, editClone) {
+    // copy classes, contents, IDs, but no children
+    var copy = original.cloneNode();
+    editClone(copy, original);
+    original.childNodes.forEach((child) => {
+      copy.appendChild(this.deepCopy(child, editClone));
+    });
+    return copy;
+  },
+
+  popTooltip: function(event) {
+    return this.element.removeChild(this.element.lastChild);
+  }
 };
+
+// A Slide contains one or more Cells, which helpful Tooltips are attached to.
+function Cell(selection, definition) {
+  this.word = selection.toString();
+  this.definition = definition;
+
+  this.element = build("span", {className: "word"});
+  NodeChirurgeon.wrapSelection(this.element, selection);
+  TooltipManager.watch(this.element, this.definition);
+}
 
 var Slides = {
   slides: data["slides"],
@@ -62,20 +97,17 @@ var Slides = {
   }
 };
 
-/* Split, enclose, and reattach nodes with surgical accuracy. */
-
+// Split, enclose, and reattach nodes with surgical accuracy.
 var NodeChirurgeon = {
   wrapSelection: function(wrapper, selection) {
     var [start, end] = this.prepareBoundaries(selection);
 
     start.parentNode.insertBefore(wrapper, start);
 
-    this.walkThroughSiblings(start, end, function(node) {
-      wrapper.appendChild(node);
-    });
+    this.walkSiblings(start, end, (node) => wrapper.appendChild(node));
   },
 
-  walkThroughSiblings: function(start, end, callback) {
+  walkSiblings: function(start, end, callback) {
     var cache, cursor = start;
     do {
       // cache the next sibling, since we're expecting to move
@@ -114,13 +146,9 @@ var NodeChirurgeon = {
 
 var Editor = {
   addDefinition: function() {
-    var selection = document.getSelection();        // shhhh. shhhhh, it's ok. just ignore these
-    var word = selection.toString();                if(word.length == 0) { throw "no selection"; }
-    var definition = this.defInput.value;           if(definition.length == 0) { throw "no definition"; }
-
-    NodeChirurgeon.wrapSelection(
-      Tooltip.createHover(word, definition),
-      selection
+    var cell = new Cell(
+      document.getSelection(),
+      this.defInput.value
     );
 
     this.defInput.value = "";
