@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang='en'>
+  <head>
+    <title>The Scopeoscope</title>
+    <style type='text/css'>
+      body {
+        font-size: 18px;
+        font-family: Courier, monospace; }
+      
+      #wrapper {
+        width: 960px;
+        margin: 0 auto; }
+        #wrapper .slide {
+          font-size: 20px; }
+      
+      #tooltip .word, #tooltip .definition {
+        box-sizing: border-box;
+        display: inline-block;
+        height: 2em;
+        border: 1px solid black;
+        border-top: 0;
+        vertical-align: top;
+        padding: 5px; }
+      #tooltip .word {
+        width: 50%;
+        background: cornflowerblue;
+        border-right: 0;
+        text-align: center; }
+      #tooltip .definition {
+        width: 50%;
+        background: aliceblue;
+        border-left: 0;
+        font-family: Lato, Verdana; }
+      
+      #slides {
+        padding: 1em;
+        background: #efefef;
+        border: 1px solid black; }
+        #slides .code p.line {
+          margin: 0 0 10px 0; }
+        #slides .word {
+          cursor: pointer;
+          display: inline-block; }
+          #slides .word:hover {
+            background: wheat; }
+    </style>
+  </head>
+  <body>
+    <div id='wrapper'>
+      <div id='slides'></div>
+      <div id='tooltip'></div>
+    </div>
+    <br>
+    * write the definition, THEN click and drag to select, then click Define
+    <script>var data = {"slides":[{"code":"var myHomeTown = \"Hades\";\nconsole.log(myHomeTown);\n"}]};</script>
+    <script>
+      function build(tag, options) {
+        var el = document.createElement(tag);
+        if(options.className) { el.className = options.className; }
+        if(options.id) { el.id = options.id; }
+        if(options.contains) {
+          options.contains.forEach(function(child) {
+            el.appendChild(child);
+          });
+        }
+        if(options.text) { el.textContent = options.text; }
+        if(options.onclick) { el.onclick = options.onclick.bind(this); }
+        return el;
+      }
+      
+      var Tooltip = {
+        element: document.getElementById("tooltip"),
+      
+        toggle: function(action, word, definition) {
+          this.element[action](word);
+          this.element[action](definition);
+        },
+      
+        createTooltipListeners: function(element, word, definition) {
+          element.addEventListener("mouseover", (event) => {
+            this.toggle("appendChild", word, definition);
+          }, true);
+          element.addEventListener("mouseout", (event) => {
+            this.toggle("removeChild", word, definition);
+          }, true);
+        },
+      
+        createHover: function(word, definition) {
+          var hover = build("span", {className: "word"});
+          this.createTooltipListeners(
+            hover,
+            build("div", {className: "word", text: word}),
+            build("div", {className: "definition", text: definition})
+          );
+          return hover;
+        },
+      };
+      
+      var Slides = {
+        slides: data["slides"],
+        element: document.getElementById("slides"),
+      
+        initialize: function() {
+          this.slides.forEach(function(slide) {
+            var section = build("section", {className: "code"});
+            slide.code.split("\n").forEach(function(line) {
+              section.innerHTML += '<p class="line">' + line + '</p>';
+            });
+            this.element.appendChild(section);
+          }.bind(this));
+        },
+      
+        appendControls: function(controls) {
+          this.element.appendChild(controls);
+        }
+      };
+      
+      /* Split, enclose, and reattach nodes with surgical accuracy. */
+      
+      var NodeChirurgeon = {
+        wrapSelection: function(wrapper, sel) {
+          var [start, end] = this.prepareBoundaries(sel);
+      
+          start.parentNode.insertBefore(wrapper, start);
+      
+          this.walkThroughSiblings(start, end, function(node) {
+            wrapper.appendChild(node);
+          });
+        },
+      
+        walkThroughSiblings: function(start, end, callback) {
+          var cache, cursor = start;
+          do {
+            // cache the next sibling, since we're expecting to move
+            // the cursor node around within the DOM hierarchy
+            cache = cursor.nextSibling;
+            callback(cursor);
+            cursor = cache;
+          } while (cursor != end);
+        },
+      
+        prepareBoundaries: function(sel) {
+          var start = this.prepare(sel.anchorNode, sel.anchorOffset);
+          var end = this.prepare(sel.focusNode, sel.focusOffset);
+          if(this.userDraggedRightToLeft(start, end)) {
+            return [end, start];
+          } else {
+            return [start, end];
+          }
+        },
+      
+        // http://stackoverflow.com/a/23512678/16034
+        userDraggedRightToLeft: function(a, b) {
+          return a.compareDocumentPosition(b) === Node.DOCUMENT_POSITION_PRECEDING;
+        },
+      
+        prepare: function(node, offset) {
+          if(offset > 0 && offset < node.length) {
+            // User selected in the middle of a text node: Hello|, world!|
+            return node.splitText(offset);
+          } else {
+            // User selected at start/end of a text node: |Hello, world!|
+            return node;
+          }
+        }
+      };
+      
+      var Editor = {
+        except: function(key) {
+          console.log("Exception: %s", key);
+        },
+      
+        addDefinition: function() {
+          var selection = document.getSelection();
+          var word = selection.toString();          if(word.length == 0) { throw "no selection"; }
+          var definition = this.defInput.value;     if(definition.length == 0) { throw "no definition"; }
+          this.defInput.value = "";
+      
+          NodeChirurgeon.wrapSelection(
+            Tooltip.createHover(word, definition),
+            selection
+          );
+        },
+      
+        activate: function() {
+          this.defButton = build("button", {
+            id: "add-definition",
+            text: "Define",
+            onclick: this.addDefinition.bind(this)
+          });
+          this.defInput = build("input", {id: "write-definition"});
+          this.defControls = build("div", {
+            id: "definition-controls",
+            contains: [this.defInput, this.defButton]
+          });
+      
+          Slides.appendControls(this.defControls);
+        }
+      };
+      
+      Slides.initialize();
+      Editor.activate();
+    </script>
+  </body>
+</html>
