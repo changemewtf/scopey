@@ -2,3 +2,30 @@ slides:
   - code: |
       var myHomeTown = "Hades";
       console.log(myHomeTown);
+
+    saved:
+      tag: section
+      class: code
+      children:
+        - tag: p
+          class: line
+          children:
+            - data: var myHomeTown = "Hades";
+              children: []
+        - tag: p
+          class: line
+          children:
+            - tag: span
+              class: word
+              definition: method call with one parameter
+              children:
+                - data: 'console.log("'
+                  children: []
+                - tag: span
+                  class: word
+                  definition: local variable passed as parameter
+                  children:
+                    - data: myHomeTown
+                      children: []
+                - data: '");'
+                  children: []

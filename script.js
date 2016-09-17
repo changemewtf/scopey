@@ -32,18 +32,22 @@ var Slides = {
   initialize: function() {
     this.slides = data["slides"];
     this.element = document.getElementById("slides");
+    this.slides.forEach(this.buildSlide.bind(this));
 
-    this.slides.forEach(function(slide) {
+    Editor.initialize();
+    TooltipManager.initialize();
+  },
+
+  buildSlide: function(slide) {
+    if(slide.saved) {
+      var section = Serializer.rebuild(slide.saved);
+    } else {
       var section = build("section", {className: "code"});
       slide.code.split("\n").forEach(function(line) {
         section.innerHTML += '<p class="line">' + line + '</p>';
       });
-      this.element.appendChild(section);
-
-    }.bind(this));
-
-    Editor.initialize();
-    TooltipManager.initialize();
+    }
+    this.element.appendChild(section);
   },
 
   appendControls: function(controls) {
@@ -51,11 +55,22 @@ var Slides = {
   }
 };
 
+var Serializer = {
+  rebuild: function(saved) {
+    if(saved.tag) { var n = document.createElement(saved.tag); }
+    else if(saved.data) { var n = document.createTextNode(saved.data); }
+    if(saved.class) { n.className = saved.class; }
+    saved.children.forEach((c) => n.appendChild(this.rebuild(c)));
+    if(saved.definition) { TooltipManager.watch(n, saved.definition); }
+    return n;
+  }
+};
+
 
 /*
  * Editor
  *
- * Enable live creation of new definition Cells.
+ * Enable live creation of new definition Words.
  *
  **/
 
@@ -66,11 +81,9 @@ var Editor = {
   },
 
   addDefinition: function(event) {
-    var cell = new Cell(
-      document.getSelection(),
-      this.defInput.value
-    );
-
+    var elWord = build("span", {className: "word"});
+    NodeChirurgeon.wrapSelection(elWord, document.getSelection());
+    TooltipManager.watch(elWord, this.defInput.value);
     this.defInput.value = "";
   },
 
@@ -89,24 +102,6 @@ var Editor = {
                        });
   }
 };
-
-
-/*
- * Cell
- *
- * A chunk of text in a Slide that produce helpful Tooltips when hovered over.
- *
- **/
-
-function Cell(selection, definition) {
-  this.word = selection.toString();
-  this.definition = definition;
-
-  this.element = build("span", {className: "word"});
-
-  NodeChirurgeon.wrapSelection(this.element, selection);
-  TooltipManager.watch(this.element, this.definition);
-}
 
 
 /*
@@ -176,8 +171,8 @@ var TooltipManager = {
  * console.log(generateMessage(data));
  * console.log(generateMessage(data));    <-- target
  *
- * But each Cell gets its own element, and we can use color: transparent
- * to hide the text of ancestors in the Tooltip for a given Cell, so the
+ * But each Word gets its own element, and we can use color: transparent
+ * to hide the text of ancestors in the Tooltip for a given Word, so the
  * Tooltips end up looking like this:
  *
  * APPARENT TOOLTIP CONTENTS:
@@ -283,5 +278,3 @@ var Suture = {
     } while (cursor != end);
   }
 };
-
-// Initializers are called in the document.
