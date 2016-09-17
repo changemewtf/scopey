@@ -1,91 +1,127 @@
-var elDefinition = document.getElementById("definition");
-var elWord = document.getElementById("word");
-var elSlides = document.getElementById("slides");
-
-function createElement(tag, className, tap) {
+function build(tag, options) {
   var el = document.createElement(tag);
-  if(className) { el.className += className; }
-  if(tap) { tap(el) };
+  if(options.className) { el.className = options.className; }
+  if(options.id) { el.id = options.id; }
+  if(options.contains) {
+    options.contains.forEach(function(child) {
+      el.appendChild(child);
+    });
+  }
+  if(options.text) { el.textContent = options.text; }
+  if(options.onclick) { el.onclick = options.onclick.bind(this); }
   return el;
 }
 
-function createTooltipListeners(element, wordTextNode, definition) {
-  var tipWord = wordTextNode.cloneNode();
-  var tipDef = document.createTextNode(definition);
-  element.addEventListener("mouseover", function() {
-    elWord.appendChild(tipWord);
-    elDefinition.appendChild(tipDef);
-  });
-  element.addEventListener("mouseout", function() {
-    elWord.removeChild(tipWord);
-    elDefinition.removeChild(tipDef);
-  });
-}
+var Tooltip = {
+  word: document.getElementById("word"),
+  definition: document.getElementById("definition"),
 
-function createHoverWord(wordTextNode, definition) {
-  return createElement("span", "word", function(span) {
-    span.appendChild(wordTextNode);
-    createTooltipListeners(span, wordTextNode, definition);
-  });
-}
-
-data["slides"].forEach(function(slide) {
-  createElement("section", "code", function(section) {
-    slide.code.split("\n").forEach(function(line) {
-      section.innerHTML += '<p class="line">' + line + '</p>';
-    });
-    elSlides.appendChild(section);
-  });
-});
-
-var Editor = {
-  makeElement: function(tag, options) {
-    var el = document.createElement(tag);
-    if(options.id) { el.id = options.id; }
-    if(options.contains) {
-      options.contains.forEach(function(child) {
-        el.appendChild(child);
-      });
-    }
-    if(options.text) { el.textContent = options.text; }
-    if(options.onclick) { el.onclick = options.onclick.bind(this); }
-    return el;
+  createTooltipListeners: function(element, word, definition) {
+    element.addEventListener("mouseover", function(event) {
+      this.word.appendChild(word);
+      this.definition.appendChild(definition);
+      event.stopPropagation();
+    }.bind(this), true);
+    element.addEventListener("mouseout", function() {
+      this.word.removeChild(word);
+      this.definition.removeChild(definition);
+      event.stopPropagation();
+    }.bind(this), true);
   },
 
+  createHover: function(word, definition) {
+    var hover = build("span", {className: "word"});
+    this.createTooltipListeners(
+      hover,
+      document.createTextNode(word),
+      document.createTextNode(definition)
+    );
+    return hover;
+  },
+
+  appendControls: function(controls) {
+    definition.appendChild(controls);
+  }
+};
+
+var Slides = {
+  slides: data["slides"],
+  element: document.getElementById("slides"),
+
+  initialize: function() {
+    this.slides.forEach(function(slide) {
+      var section = build("section", {className: "code"});
+      slide.code.split("\n").forEach(function(line) {
+        section.innerHTML += '<p class="line">' + line + '</p>';
+      });
+      this.element.appendChild(section);
+    }.bind(this));
+  }
+};
+
+var NodeChirurgeon = {
+  wrapSelection: function(wrapper, sel) {
+    var start = sel.anchorNode;
+    if(sel.anchorOffset > 0 && sel.anchorOffset < start.length) {
+      start = start.splitText(sel.anchorOffset);
+    }
+    var end = sel.focusNode;
+    if(sel.focusOffset > 0 && sel.focusOffset < end.length) {
+      end = end.splitText(sel.focusOffset);
+    }
+
+    if(start.parentNode !== end.parentNode) { throw "different parents"; }
+    var container = start.parentNode;
+    var nodeList = Array.prototype.slice.call(container.childNodes);
+    var startIndex = nodeList.indexOf(start);
+    var endIndex = nodeList.indexOf(end);
+    // right-to-left selection
+    if(startIndex > endIndex) {
+      // stackoverflow.com/questions/16201656/how-to-swap-two-variables-in-javascript
+      endIndex = [startIndex, startIndex = endIndex][0];
+    }
+    nodeList.slice(startIndex, endIndex).forEach(function(node) {
+      wrapper.appendChild(node);
+    });
+
+    container.insertBefore(wrapper, container.childNodes[startIndex]);
+  }
+};
+
+var Editor = {
   except: function(key) {
     console.log("Exception: %s", key);
   },
 
   addDefinition: function() {
     var selection = document.getSelection();
-    if(selection.toString().length == 0) { this.except("no selection"); }
-    var range = selection.getRangeAt(0).cloneRange();
-    var start = selection.anchorOffset;
-    var end = selection.focusOffset - start;
-    var nodeBefore = selection.anchorNode;
-    var line = nodeBefore.parentNode;
-    var selectedTextNode = nodeBefore.splitText(start);
-    var nodeAfter = selectedTextNode.splitText(end);
+    var word = selection.toString();
+    if(word.length == 0) { this.except("no selection"); }
     var definition = this.defInput.value;
     if(definition.length == 0) { this.except("no definition"); }
-    var newElement = createHoverWord(selectedTextNode, definition);
-    line.insertBefore(newElement, nodeAfter);
+    this.defInput.value = "";
+
+    NodeChirurgeon.wrapSelection(
+      Tooltip.createHover(word, definition),
+      selection
+    );
   },
 
   activate: function() {
-    this.defButton = this.makeElement("button", {
+    this.defButton = build("button", {
       id: "add-definition",
       text: "Define",
-      onclick: this.addDefinition
+      onclick: this.addDefinition.bind(this)
     });
-    this.defInput = this.makeElement("input", {id: "write-definition"});
-    this.definitionControls = this.makeElement("div", {
+    this.defInput = build("input", {id: "write-definition"});
+    this.defControls = build("div", {
       id: "definition-controls",
       contains: [this.defInput, this.defButton]
     });
 
-    elDefinition.appendChild(this.definitionControls);
+    Tooltip.appendControls(this.defControls);
   }
 };
 
+Slides.initialize();
 Editor.activate();
