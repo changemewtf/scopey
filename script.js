@@ -61,30 +61,49 @@ var Slides = {
 
 var NodeChirurgeon = {
   wrapSelection: function(wrapper, sel) {
-    var start = sel.anchorNode;
-    if(sel.anchorOffset > 0 && sel.anchorOffset < start.length) {
-      start = start.splitText(sel.anchorOffset);
-    }
-    var end = sel.focusNode;
-    if(sel.focusOffset > 0 && sel.focusOffset < end.length) {
-      end = end.splitText(sel.focusOffset);
-    }
+    var [start, end] = this.prepareBoundaries(sel);
 
-    if(start.parentNode !== end.parentNode) { throw "different parents"; }
-    var container = start.parentNode;
-    var nodeList = Array.prototype.slice.call(container.childNodes);
-    var startIndex = nodeList.indexOf(start);
-    var endIndex = nodeList.indexOf(end);
-    // right-to-left selection
-    if(startIndex > endIndex) {
-      // stackoverflow.com/questions/16201656/how-to-swap-two-variables-in-javascript
-      endIndex = [startIndex, startIndex = endIndex][0];
-    }
-    nodeList.slice(startIndex, endIndex).forEach(function(node) {
+    start.parentNode.insertBefore(wrapper, start);
+
+    this.walkThroughSiblings(start, end, function(node) {
       wrapper.appendChild(node);
     });
+  },
 
-    container.insertBefore(wrapper, container.childNodes[startIndex]);
+  walkThroughSiblings: function(start, end, callback) {
+    var cache, cursor = start;
+    do {
+      // cache the next sibling, since we're expecting to move
+      // the cursor node around within the DOM hierarchy
+      cache = cursor.nextSibling;
+      callback(cursor);
+      cursor = cache;
+    } while (cursor != end);
+  },
+
+  prepareBoundaries: function(sel) {
+    var start = this.prepare(sel.anchorNode, sel.anchorOffset);
+    var end = this.prepare(sel.focusNode, sel.focusOffset);
+    if(this.userDraggedRightToLeft(start, end)) {
+      return [end, start];
+    } else {
+      return [start, end];
+    }
+  },
+
+  // http://stackoverflow.com/a/23512678/16034
+  userDraggedRightToLeft: function(a, b) {
+    return a.compareDocumentPosition(b) === Node.DOCUMENT_POSITION_PRECEDING;
+  },
+
+  prepare: function(node, offset) {
+    if(offset > 0 && offset < node.length) {
+      // User selected in the middle of a text node: Hello|, world!|
+      return node.splitText(offset);
+    } else {
+      // User selected at start/end of a text node: |Hello, world!|
+      return node;
+    }
   }
 };
 
@@ -95,10 +114,8 @@ var Editor = {
 
   addDefinition: function() {
     var selection = document.getSelection();
-    var word = selection.toString();
-    if(word.length == 0) { this.except("no selection"); }
-    var definition = this.defInput.value;
-    if(definition.length == 0) { this.except("no definition"); }
+    var word = selection.toString();          if(word.length == 0) { throw "no selection"; }
+    var definition = this.defInput.value;     if(definition.length == 0) { throw "no definition"; }
     this.defInput.value = "";
 
     NodeChirurgeon.wrapSelection(
