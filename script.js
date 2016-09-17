@@ -59,6 +59,8 @@ var Slides = {
   }
 };
 
+/* Split, enclose, and reattach nodes with surgical accuracy. */
+
 var NodeChirurgeon = {
   wrapSelection: function(wrapper, sel) {
     var [start, end] = this.prepareBoundaries(sel);
