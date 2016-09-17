@@ -1,14 +1,15 @@
 function build(tag, options) {
   var el = document.createElement(tag);
-  if(options.className) { el.className = options.className; }
-  if(options.id) { el.id = options.id; }
-  if(options.contains) {
-    options.contains.forEach(function(child) {
-      el.appendChild(child);
-    });
+  var optionRecipes = {
+    className: (v) => el.className = v,
+    id:        (v) => el.id = v,
+    contains:  (v) => { v.forEach((c) => el.appendChild(c)) },
+    text:      (v) => el.textContent = v,
+    onclick:   (v) => el.onclick = v
+  };
+  for (var k in optionRecipes) {
+    if(options[k]) { optionRecipes[k](options[k]); }
   }
-  if(options.text) { el.textContent = options.text; }
-  if(options.onclick) { el.onclick = options.onclick.bind(this); }
   return el;
 }
 
