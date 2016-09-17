@@ -9,53 +9,7 @@ body
   .slide
     font-size: 20px
 
-#slides
-  padding: 5px
-  background: #efefef
-  border: 1px solid black
-  height: 100px
-
-  .word
-    cursor: pointer
-    display: inline-block
-    padding: 5px
-
-    &:hover
-      background: wheat
-
-  .precedes-a-semicolon
-    padding-right: 0
-
-  .semicolon
-    padding-left: 0
-    margin-left: -3px
-
-  .keywordVar
-    color: brown
-
-  .varName
-    color: darkcyan
-
-  .htmlOpenAngle
-    padding-right: 0
-  .htmlTagName
-    color: darkcyan
-    padding-left: 0
-    padding-right: 0
-  .htmlCloseAngle, .htmlClosingTag
-    padding-left: 0
-    padding-right: 0
-  .htmlAttrName:
-    margin-left: 5px
-  .htmlAttrValue
-    padding-right: 0
-  .htmlTextContent
-    padding-left: 0
-    padding-right: 0
-
 #tooltip
-  height: 45px
-
   #word, #definition
     box-sizing: border-box
     display: inline-block
@@ -63,7 +17,7 @@ body
     border: 1px solid black
     border-top: 0
     vertical-align: top
-    padding: 10px
+    padding: 1em
 
   #word
     width: 20%
@@ -77,3 +31,21 @@ body
     background: aliceblue
     border-left: 0
     font-family: Lato, Verdana
+
+#slides
+  padding: 1em
+  background: #efefef
+  border: 1px solid black
+  height: 100px
+
+  .code
+    p
+      margin: 0 0 10px 0
+
+  .word
+    cursor: pointer
+    display: inline-block
+
+    &:hover
+      background: wheat
+
