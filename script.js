@@ -1,16 +1,18 @@
 function build(tag, options) {
-  var el = document.createElement(tag);
-  var optionRecipes = {
-    className: (v) => el.className = v,
-    id:        (v) => el.id = v,
-    contains:  (v) => { v.forEach((c) => el.appendChild(c)) },
-    text:      (v) => el.textContent = v,
-    onclick:   (v) => el.onclick = v
-  };
-  for (var k in optionRecipes) {
-    if(options[k]) { optionRecipes[k](options[k]); }
+  var element = document.createElement(tag),
+      copy    = (k,v) => element[k] = v,
+      recipes = {
+        className:   copy,
+        id:          copy,
+        contains:    (k,v) => { v.forEach((c) => element.appendChild(c)) },
+        textContent: copy,
+        onclick:     copy
+      };
+
+  for (var k in recipes) {
+    if(options[k]) { recipes[k](k, options[k]); }
   }
-  return el;
+  return element;
 }
 
 var Tooltip = {
@@ -34,8 +36,8 @@ var Tooltip = {
     var hover = build("span", {className: "word"});
     this.createTooltipListeners(
       hover,
-      build("div", {className: "word", text: word}),
-      build("div", {className: "definition", text: definition})
+      build("div", {className: "word", textContent: word}),
+      build("div", {className: "definition", textContent: definition})
     );
     return hover;
   },
@@ -63,8 +65,8 @@ var Slides = {
 /* Split, enclose, and reattach nodes with surgical accuracy. */
 
 var NodeChirurgeon = {
-  wrapSelection: function(wrapper, sel) {
-    var [start, end] = this.prepareBoundaries(sel);
+  wrapSelection: function(wrapper, selection) {
+    var [start, end] = this.prepareBoundaries(selection);
 
     start.parentNode.insertBefore(wrapper, start);
 
@@ -84,9 +86,9 @@ var NodeChirurgeon = {
     } while (cursor != end);
   },
 
-  prepareBoundaries: function(sel) {
-    var start = this.prepare(sel.anchorNode, sel.anchorOffset);
-    var end = this.prepare(sel.focusNode, sel.focusOffset);
+  prepareBoundaries: function(selection) {
+    var start = this.prepare(selection.anchorNode, selection.anchorOffset);
+    var end = this.prepare(selection.focusNode, selection.focusOffset);
     if(this.userDraggedRightToLeft(start, end)) {
       return [end, start];
     } else {
@@ -94,51 +96,53 @@ var NodeChirurgeon = {
     }
   },
 
-  // http://stackoverflow.com/a/23512678/16034
   userDraggedRightToLeft: function(a, b) {
+    // http://stackoverflow.com/a/23512678/16034
     return a.compareDocumentPosition(b) === Node.DOCUMENT_POSITION_PRECEDING;
   },
 
   prepare: function(node, offset) {
     if(offset > 0 && offset < node.length) {
-      // User selected in the middle of a text node: Hello|, world!|
+      // selected in the middle: Hello[, world!]
       return node.splitText(offset);
     } else {
-      // User selected at start/end of a text node: |Hello, world!|
+      // selected at a boundary: [Hello, world!]
       return node;
     }
   }
 };
 
 var Editor = {
-  except: function(key) {
-    console.log("Exception: %s", key);
-  },
-
   addDefinition: function() {
-    var selection = document.getSelection();
-    var word = selection.toString();          if(word.length == 0) { throw "no selection"; }
-    var definition = this.defInput.value;     if(definition.length == 0) { throw "no definition"; }
-    this.defInput.value = "";
+    var selection = document.getSelection();        // shhhh. shhhhh, it's ok. just ignore these
+    var word = selection.toString();                if(word.length == 0) { throw "no selection"; }
+    var definition = this.defInput.value;           if(definition.length == 0) { throw "no definition"; }
 
     NodeChirurgeon.wrapSelection(
       Tooltip.createHover(word, definition),
       selection
     );
+
+    this.defInput.value = "";
+  },
+
+  buildControls: function() {
+    this.defButton   = build("button", {
+                         id: "add-definition",
+                         textContent: "Define",
+                         onclick: this.addDefinition.bind(this)
+                       });
+    this.defInput    = build("input", {
+                         id: "write-definition"
+                       });
+    this.defControls = build("div", {
+                         id: "definition-controls",
+                         contains: [this.defInput, this.defButton]
+                       });
   },
 
   activate: function() {
-    this.defButton = build("button", {
-      id: "add-definition",
-      text: "Define",
-      onclick: this.addDefinition.bind(this)
-    });
-    this.defInput = build("input", {id: "write-definition"});
-    this.defControls = build("div", {
-      id: "definition-controls",
-      contains: [this.defInput, this.defButton]
-    });
-
+    this.buildControls();
     Slides.appendControls(this.defControls);
   }
 };
