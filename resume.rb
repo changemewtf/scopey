@@ -6,13 +6,18 @@ require 'json'
 
 class Application
   def call env
-    [200, {'Content-Type' => 'text/html; charset=utf-8'}, [body]]
+    [200, {'Content-Type' => 'text/html; charset=utf-8'}, [body(env)]]
   end
 
   private
 
-  def body
-    Haml::Engine.new(File.read('template.haml')).render Object.new, locals
+  def body env
+    tmpl = case env["PATH_INFO"]
+           when "/events" then "events"
+           else "template"
+           end
+
+    Haml::Engine.new(File.read(tmpl + ".haml")).render Object.new, locals
   end
 
   def locals

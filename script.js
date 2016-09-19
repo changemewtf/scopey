@@ -124,6 +124,7 @@ var Editor = {
 
 var TooltipManager = {
   element: null,
+  active: null,
 
   initialize: function() {
     this.element = document.getElementById("tooltip");
@@ -132,29 +133,47 @@ var TooltipManager = {
   watch: function(element, definition) {
     element.addEventListener("mouseover", (event) => {
       if(!event.firstCaughtBy) { event.firstCaughtBy = element; }
-      this.pushTooltip(
-        AlignedWord.buildElement(event.firstCaughtBy, element),
-        definition
-      );
+      this.push(element, definition, event.firstCaughtBy);
     }, true);
 
-    element.addEventListener("mouseout", this.popTooltip.bind(this), true);
+    element.addEventListener("mouseout", (event) => {
+      this.pop(element);
+    }, true);
   },
 
-  pushTooltip: function(elWord, definition) {
+  push: function(element, definition, elOuter) {
     this.element.appendChild(
-      build("div", {
-        className: "tooltip",
-        contains: [
-          build("div", {className: "word", contains: [elWord]}),
-          build("div", {className: "definition", text: definition})
-        ]
-      })
+      this.build(
+        AlignedWord.buildElement(element, elOuter),
+        definition
+      )
     );
+    this.setActive(element);
   },
 
-  popTooltip: function(event) {
-    return this.element.removeChild(this.element.lastChild);
+  pop: function(element) {
+    this.element.removeChild(this.element.lastChild);
+    this.setActive(null);
+  },
+
+  setActive: function(element) {
+    if(this.active) { this.active.classList.remove("active"); }
+    if(element) {
+      this.active = element;
+      element.classList.add("active");
+    } else {
+      this.active = null;
+    }
+  },
+
+  build: function(elWord, definition) {
+    return build("div", {
+      className: "tooltip",
+      contains: [
+        build("div", {className: "word", contains: [elWord]}),
+        build("div", {className: "definition", text: definition})
+      ]
+    })
   }
 };
 
@@ -183,7 +202,7 @@ var TooltipManager = {
  **/
 
 var AlignedWord = {
-  buildElement: function(outer, target) {
+  buildElement: function(target, outer) {
     return deepCopy(outer, function(copy, original) {
       if(original === target) {
         copy.className += " shown";

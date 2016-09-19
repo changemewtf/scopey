@@ -19,7 +19,7 @@ slides:
               class: word
               definition: method call with one parameter
               children:
-                - data: 'console.log("'
+                - data: 'console.log('
                   children: []
                 - tag: span
                   class: word
@@ -27,5 +27,5 @@ slides:
                   children:
                     - data: myHomeTown
                       children: []
-                - data: '");'
+                - data: ');'
                   children: []
