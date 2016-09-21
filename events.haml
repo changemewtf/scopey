@@ -1,0 +1,617 @@
+!!!html
+%html{lang: "en"}
+  %head
+    %title Events
+    :sass
+      =rad-background($main, $alt)
+        $shape: circle
+        $mEnd: 20px
+        $aEnd: 40px
+        background: repeating-radial-gradient($shape, $main, $main $mEnd, $alt $mEnd, $alt $aEnd)
+
+      body
+        padding: 2em
+        font-family: Arial
+
+      div
+        border: 0
+        box-sizing: border-box
+        cursor: pointer
+
+      ul
+        list-style-type: none
+        padding: 0
+        margin: 0
+
+      div#outer
+        float: left
+        overflow: auto
+
+      table#controls, section#sidebar
+        float: left
+        margin-left: 2em
+
+      table#controls
+        float: left
+        width: 200px
+        vertical-align: top
+
+      section#sidebar
+        width: 400px
+
+        #instructions
+          border: 1px solid silver
+          margin: 5px 0
+
+          li
+            border: 1px solid black
+            display: inline-block
+
+          span
+            display: inline-block
+            padding: 5px
+            line-height: 16px
+            text-align: center
+            vertical-align: middle
+
+          .key
+            width: 16px
+            height: 16px
+            background: silver
+
+      table#controls
+        margin-bottom: 1em
+        font-size: 12px
+
+        thead
+          cursor: pointer
+
+        thead td
+          font-weight: bold
+
+        td
+          padding: 3px
+
+        &.hidden tr.control
+          display: none
+
+        td:first-child + td + td, td:last-child
+          text-align: center
+          width: 16px
+
+      table#logger
+        .phase
+          text-align: center
+
+        tr
+          border: 2px solid black
+          background: white
+
+          td
+            background: white
+
+        thead td
+          font-weight: bold
+          font-family: Monospace
+          font-size: 16px
+
+      table
+        width: 100%
+        border-collapse: collapse
+        vertical-align: top
+        background: white
+
+        tr.animating td
+          background-color: inherit
+
+        thead tr
+          background: #efefef
+
+        td
+          padding: 5px
+          border: 1px solid black
+
+      table#logger, table#controls
+        tr
+          border: 1px solid black
+          background: white
+
+          td.outer
+            background: rgb(255, 170, 170)
+          td.inner
+            background: rgb(170, 255, 170)
+          td.core
+            background: rgb(170, 170, 255)
+
+      div.target nope
+        $wid: 20px
+        border-width: $wid $wid 0 $wid
+        border-style: ridge
+
+      #outer
+        display: inline-block
+        width: 500px
+        height: 300px
+        //background: rgba(255, 170, 170, 1)
+        //&.currentTarget
+        //  background: rgba(255, 0, 0, 1)
+        //&.target
+        //  border-color: red
+        //  +rad-background(#F55, #FAA)
+
+        #inner
+          width: 75%
+          height: 75%
+          //background: rgba(170, 255, 170, 1)
+          //&.currentTarget nope
+          //  background: rgba(0, 255, 0, 1)
+          //&.target nope
+          //  border-color: green
+          //  +rad-background(#5F5, #AFA)
+
+          #core
+            width: 75%
+            height: 75%
+            //background: rgba(170, 170, 255, 1)
+            //&.currentTarget nope
+            //  background: rgba(0, 0, 255, 1)
+            //&.target nope
+            //  border-color: blue
+            //  +rad-background(#55F, #AAF)
+
+      #outer
+        position: relative
+
+        #inner
+          position: absolute
+          left: 12.5%
+          bottom: 0
+
+          #core
+            position: absolute
+            left: 12.5%
+            bottom: 0
+
+  %body.mode-live
+    #outer
+
+      #inner
+
+        #core
+
+    %section#sidebar
+      %section#instructions
+        %ul
+          %li#clear
+            %span.key c
+            %span.usage clear
+          %li#queueMode
+            %span.key q
+            %span.usage mode
+          %li#play
+            %span.key p
+            %span.usage play
+
+      %section#mode
+        %strong mode:
+        %span.queueMode live
+
+      %table#logger
+        %thead
+          %tr
+            %td.phase
+            %td.event event
+            %td.currentTarget handled by
+            %td.target target
+
+    %table#controls
+      %thead
+        %tr
+          %td.element element
+          %td.event event
+          %td.capture{title: "capture"} ⬇
+          %td.bubble{title: "bubble"} ⬆
+      - %i[outer inner core].each do |el|
+        - %i[click mouseover].each do |evt|
+          %tr.control{class: evt}
+            %td{class: el}= el
+            %td= evt
+            %td.capture
+              %input{"type"=>"checkbox","data-event"=>evt,"data-element"=>el,"data-phase"=>"capture"}
+            %td.bubble
+              %input{"type"=>"checkbox","data-event"=>evt,"data-element"=>el,"data-phase"=>"bubble"}
+
+
+    // only need build
+    %script= javascript
+
+    :javascript
+      var controls = document.getElementById("controls");
+      var logger = document.getElementById("logger");
+
+      var ColorManager = {
+        baseColors: {
+          outer: { red: 255, green: 170, blue: 170 },
+          inner: { red: 170, green: 255, blue: 170 },
+          core: { red: 170, green: 170, blue: 255 }
+        },
+
+        focusColors: {
+          outer: { red: 255, green: 0, blue: 0 },
+          inner: { red: 0, green: 255, blue: 0 },
+          core: { red: 0, green: 0, blue: 255 }
+        },
+
+        outer: null,
+        inner: null,
+        core: null,
+
+        elements: [],
+
+        animating: false,
+        focused: null,
+        clearFocusTimeout: null,
+
+        pulseColor: {red: 255, green: 255, blue: 0},
+        pulseTime: 250,
+
+        focusTime: 1000,
+
+        frameTime: 10,
+
+        initialize: function() {
+          this.outer = document.getElementById("outer");
+          this.inner = document.getElementById("inner");
+          this.core = document.getElementById("core");
+
+          this.elements = [this.outer, this.inner, this.core];
+
+          console.groupCollapsed("update: initialize");
+          this.update();
+          console.groupEnd();
+        },
+
+        update: function(logFrame=console) {
+          if(this.animating && !logFrame) {
+            console.log("skipping arbitrary update() call during animation");
+            return false;
+          }
+          this.elements.forEach((element) => {
+            this.updateElement(element, logFrame);
+          });
+        },
+
+        updateElement: function(element, logFrame) {
+          var color;
+
+          if(element.animating) color = element.interpolated;
+          else color = this.getColor(element);
+
+          this.setColor(element, color, logFrame);
+
+          if(element.other) this.setColor(element.other, color, logFrame);
+        },
+
+        getColor: function(element) {
+          if(this.focused === element) return this.focusColors[element.id];
+          else return this.baseColors[element.id];
+        },
+
+        focus: function(element, other) {
+          if(this.clearFocusTimeout) {
+            clearTimeout(this.clearFocusTimeout);
+            this.clearFocusTimeout = null;
+          }
+
+          this.focused = element;
+          element.other = other;
+          console.groupCollapsed("update: focus on " + element.id);
+          this.update();
+          console.groupEnd();
+
+          return new Promise((resolve, reject) => {
+            this.clearFocusTimeout = setTimeout(() => {
+              this.clearFocus(element);
+              resolve();
+            }, this.focusTime);
+          });
+        },
+
+        clearFocus: function(element) {
+          this.focused = null;
+          console.groupCollapsed("update: clear focus");
+          this.update();
+          element.other = null;
+          console.groupEnd();
+        },
+
+        setColor: function(element, rgb, logger) {
+          logger.log("setting", element.id, "to", rgb);
+          element.style.backgroundColor = RGB.toString(rgb);
+        },
+
+        pulse: function(element) {
+          this.animating = true;
+          element.interpolated = this.getColor(element);
+          element.animating = true;
+
+          var callback = (scale, logFrame) => {
+            var base = this.getColor(element);
+            element.interpolated = Animation.getInterpolatedColor(base, this.pulseColor, scale);
+            logFrame.log("animate " + element.id + " at scale " + scale);
+            logFrame.log("update");
+            this.update(logFrame);
+          };
+
+          var finished = () => {
+            this.animating = false;
+            element.animating = false;
+            element.interpolated = null;
+          };
+
+          return Animation.animate(this.pulseTime, this.frameTime, callback, finished);
+        }
+      };
+
+      var queueMode = false;
+      var queuedEvents = [];
+
+      var RGB = {
+        // http://queueoverflow.com/questions/34980574/how-to-extract-color-values-from-rgb-string-in-javascript
+        toObject: function(str){
+          var match = str.match(/rgba?\((\d{1,3}), ?(\d{1,3}), ?(\d{1,3})\)?(?:, ?(\d(?:\.\d?))\))?/);
+          return match ? {
+            red: match[1],
+            green: match[2],
+            blue: match[3]
+          } : {};
+        },
+
+        toString: function(data) {
+          return "rgb(" + data.red + "," + data.green + "," + data.blue + ")";
+        }
+      };
+
+      var Animation = {
+        pulse: function(element) {
+          var start = {red: 255, green: 255, blue: 0};
+          var base = RGB.toObject(window.getComputedStyle(element).backgroundColor);
+          element.animating = true;
+
+          var callback = (scale, logFrame) => {
+            var color = this.getInterpolatedColor(base, start, scale);
+            ColorManager.setColor(element, color, logFrame);
+          };
+
+          var finished = (logAnim) => {
+            element.animating = false;
+          };
+
+          return this.animate(250, 10, callback, finished);
+        },
+
+        getInterpolatedColor: function(base, start, scale) {
+          var delta = {
+            red: start.red - base.red,
+            green: start.green - base.green,
+            blue: start.blue - base.blue
+          };
+          return {
+            red: Math.round(start.red - delta.red * scale),
+            green: Math.round(start.green - delta.green * scale),
+            blue: Math.round(start.blue - delta.blue * scale)
+          };
+        },
+
+        animate: function(time, frameTime, callback, finished) {
+          var frameCount = time / frameTime;
+          var frame = 1;
+
+          return new Promise((resolve, reject) => {
+            var logAnim = new AsyncLogGroup("animation");
+            var id = setInterval(() => {
+              var scale = frame / frameCount;
+
+              var logFrame = logAnim.open("animation frame " + frame);
+              callback(scale, logFrame);
+              logFrame.close();
+
+              if(frame++ == frameCount) {
+                clearInterval(id);
+                finished(logAnim);
+                logAnim.log("animation complete");
+                logAnim.close();
+                resolve();
+              }
+            }, frameTime);
+          });
+        }
+      };
+
+      function phaseToIcon(phase) {
+        switch(phase) {
+          case Event.NONE: return "X";
+          case Event.CAPTURING_PHASE: return "⬇";
+          case Event.AT_TARGET: return "◎";
+          case Event.BUBBLING_PHASE: return "⬆";
+        };
+      }
+
+      function logEvent(event, phase) {
+        var definedPhase = {
+          "capture": "⬇",
+          "bubble": "⬆"
+        }[phase];
+
+        var logged = build("tr", {
+          class: "loggedEvent",
+          contains: [
+            build("td", { class: "phase", text: phaseToIcon(event.eventPhase) }),
+            build("td", { class: "type", text: event.type }),
+            build("td", {
+              class: "currentTarget " + event.currentTarget.id,
+              // so we can see which handler got it even when it's the target
+              text: event.currentTarget.id + " " + definedPhase
+            }),
+            build("td", { class: "target " + event.target.id, text: event.target.id })
+          ]
+        });
+        logger.appendChild(logged);
+        return logged;
+      }
+
+      function clearEventLog() {
+        var rows = logger.querySelectorAll("tr.loggedEvent");
+        rows.forEach((tr) => logger.removeChild(tr));
+        queuedEvents = [];
+      }
+
+
+      // otherwise we lose currentTarget, phase, etc.
+      function cacheEvent(event) {
+        return {
+          currentTarget: event.currentTarget,
+          target: event.target,
+          eventPhase: event.eventPhase,
+          elLog: event.elLog,
+          type: event.type
+        }
+      }
+
+      var nowPlaying = Promise.resolve();
+
+      function catchEvent(event, phase) {
+        var cached = cacheEvent(event);
+        cached.elLog = logEvent(event, phase);
+        queuedEvents.push(cached);
+        if(!queueMode) {
+          nowPlaying = nowPlaying.then(() => { return playEvent(cached) });
+        }
+      }
+
+      var currentTarget;
+      var target;
+
+      function playEvents() {
+        var delay = 1000,
+            currentDelay = 0;
+        queuedEvents.forEach((e) => {
+          setTimeout(playEvent, currentDelay, e);
+          currentDelay += delay;
+        });
+      }
+
+      function consoleLogPlayEvent(event) {
+        var mainCSS = "color: blue; font-size: 14px;";
+        var eventCSS = "color: black; font-size: 16px; font-weight: bold; font-family: monospace;";
+        console.info("%c Playing %c%s%c Event", mainCSS, eventCSS, event.type, mainCSS);
+      }
+
+      function playEvent(event) {
+        consoleLogPlayEvent(event);
+        var logTarget = event.elLog.querySelector(".target");
+        var logCurrent = event.elLog.querySelector(".currentTarget");
+        return Promise.all([
+          ColorManager.focus(event.currentTarget, logCurrent),
+          ColorManager.pulse(event.target),
+          Animation.pulse(logTarget)
+        ]);
+      }
+
+      function toggleQueueMode() {
+        if(queueMode) {
+          document.querySelector("#mode .queueMode").textContent = "live";
+          document.body.classList.remove("mode-queued");
+          document.body.classList.add("mode-live");
+          queueMode = false;
+        } else {
+          document.querySelector("#mode .queueMode").textContent = "queued";
+          document.body.classList.remove("mode-live");
+          document.body.classList.add("mode-queued");
+          queueMode = true;
+        }
+      }
+
+      function AsyncLogGroup(name, parentGroup=null) {
+        this.name = name;
+        this.messages = [];
+        this.parentGroup = parentGroup;
+      }
+
+      AsyncLogGroup.LOG = 0;
+      AsyncLogGroup.GROUP = 1;
+
+      AsyncLogGroup.prototype.log = function() {
+        this.messages.push({
+          type: AsyncLogGroup.LOG,
+          args: arguments
+        });
+      };
+
+      AsyncLogGroup.prototype.open = function(name) {
+        var group = new AsyncLogGroup(name, this);
+        this.messages.push({
+          type: AsyncLogGroup.GROUP,
+          group: group
+        });
+        return group;
+      };
+
+      AsyncLogGroup.prototype.close = function() {
+        if(this.parentGroup) return false;
+        else this.print();
+      };
+
+      AsyncLogGroup.prototype.print = function() {
+        console.groupCollapsed(this.name);
+        this.messages.forEach((message) => {
+          switch(message.type) {
+          case AsyncLogGroup.LOG:
+            console.log(...message.args);
+            break;
+          case AsyncLogGroup.GROUP:
+            message.group.print();
+            break;
+          };
+        });
+        console.groupEnd();
+      };
+
+      //document.addEventListener("click", playEvents);
+      document.addEventListener("keypress", function(event) {
+        switch(event.key) {
+        case 'c':
+          clearEventLog();
+          break;
+        case 'q':
+          toggleQueueMode();
+          break;
+        case 'p':
+          playEvents();
+          break;
+        }
+      });
+
+      controls.querySelectorAll("input").forEach((input) => {
+        var phase = input.getAttribute("data-phase"),
+            eventName = input.getAttribute("data-event"),
+            elementID = input.getAttribute("data-element"),
+            capture = (phase === "capture"),
+            element = document.getElementById(elementID);
+
+        if(eventName === "click" && phase === "capture") {
+          input.checked = true;
+        }
+
+        element.addEventListener(eventName, (event) => {
+          if(input.checked) {
+            catchEvent(event, phase);
+          }
+        }, capture);
+      });
+
+      controls.querySelector("thead").addEventListener("click", (event) => {
+        controls.classList.toggle("hidden");
+      });
+
+      ColorManager.initialize();
