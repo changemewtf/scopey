@@ -6,17 +6,29 @@ require 'json'
 
 class Application
   def call env
-    [200, {'Content-Type' => 'text/html; charset=utf-8'}, [body(env)]]
+    case env["PATH_INFO"]
+    when "/"
+      html haml("template")
+    when "/events"
+      html haml("events")
+    when "/save"
+      save env["rack.input"].read
+    else
+      [404, {'Content-Type' => 'text/plain'}, ["Not found"]]
+    end
   end
 
   private
 
-  def body env
-    tmpl = case env["PATH_INFO"]
-           when "/events" then "events"
-           else "template"
-           end
+  def save body
+    [200, {'Content-Type' => 'application/json'}, [json]]
+  end
 
+  def html body
+    [200, {'Content-Type' => 'text/html; charset=utf-8'}, [body]]
+  end
+
+  def haml tmpl
     Haml::Engine.new(File.read(tmpl + ".haml")).render Object.new, locals
   end
 

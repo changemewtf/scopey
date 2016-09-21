@@ -6,6 +6,7 @@ function build(tag, options) {
         id:          copy,
         contains:    (k,v) => { v.forEach((c) => element.appendChild(c)) },
         text:        (k,v) => { element.textContent = v },
+        class:       (k,v) => { element.className = v },
         textContent: copy,
         onclick:     copy
       };
@@ -29,6 +30,8 @@ var Slides = {
   slides: [],
   element: null,
 
+  slideAttr: "data-slide-index",
+
   initialize: function() {
     this.slides = data["slides"];
     this.element = document.getElementById("slides");
@@ -38,7 +41,7 @@ var Slides = {
     TooltipManager.initialize();
   },
 
-  buildSlide: function(slide) {
+  buildSlide: function(slide, index) {
     if(slide.saved) {
       var section = Serializer.rebuild(slide.saved);
     } else {
@@ -47,7 +50,31 @@ var Slides = {
         section.innerHTML += '<p class="line">' + line + '</p>';
       });
     }
+    section.setAttribute(this.slideAttr, index);
     this.element.appendChild(section);
+  },
+
+  addWord: function(elWord, definition, save=true) {
+    TooltipManager.watch(elWord, definition);
+    elWord.definition = definition;
+    if(save) this.update(elWord);
+  },
+
+  update: function(elWord) {
+    var elSlide = this.findSlide(elWord),
+        index   = elSlide.getAttribute(this.slideAttr),
+        slide   = this.slides[index];
+    slide.saved = Serializer.save(elSlide);
+    this.sync();
+  },
+
+  sync: function(data, index) {
+    ajax("/save", this.slides);
+  },
+
+  findSlide: function(el) {
+    if(el.hasAttribute(this.slideAttr)) return el;
+    else return this.findSlide(el.parentNode);
   },
 
   appendControls: function(controls) {
@@ -56,13 +83,23 @@ var Slides = {
 };
 
 var Serializer = {
-  rebuild: function(saved) {
-    if(saved.tag) { var n = document.createElement(saved.tag); }
-    else if(saved.data) { var n = document.createTextNode(saved.data); }
-    if(saved.class) { n.className = saved.class; }
+  rebuild: function(saved, index) {
+    if(saved.tag) var n = document.createElement(saved.tag);
+    else if(saved.data) var n = document.createTextNode(saved.data);
+    if(saved.class) n.className = saved.class;
     saved.children.forEach((c) => n.appendChild(this.rebuild(c)));
-    if(saved.definition) { TooltipManager.watch(n, saved.definition); }
+    if(saved.definition) Slides.addWord(n, saved.definition, false);
     return n;
+  },
+
+  save: function(node) {
+    return {
+      tag: node.tagName,
+      class: node.className,
+      definition: node.definition,
+      data: node.data,
+      children: node.childNodes.map((n) => this.save(n))
+    };
   }
 };
 
@@ -81,9 +118,10 @@ var Editor = {
   },
 
   addDefinition: function(event) {
-    var elWord = build("span", {className: "word"});
+    var elWord = build("span", {className: "word"}),
+        definition = this.defInput.value;
     NodeChirurgeon.wrapSelection(elWord, document.getSelection());
-    TooltipManager.watch(elWord, this.defInput.value);
+    Slides.addWord(elWord, definition);
     this.defInput.value = "";
   },
 
@@ -253,8 +291,8 @@ var NodeChirurgeon = {
 
 var Scalpel = {
   makeBoundaryIncisions: function(selection) {
-    var start = this.cut(selection.anchorNode, selection.anchorOffset);
-    var end = this.cut(selection.focusNode, selection.focusOffset);
+    var start = this.cut(selection.anchorNode, selection.anchorOffset),
+        end   = this.cut(selection.focusNode, selection.focusOffset);
     if(this.userDraggedRightToLeft(start, end)) {
       return [end, start];
     } else {
@@ -297,3 +335,23 @@ var Suture = {
     } while (cursor != end);
   }
 };
+
+
+/*
+ * AJAX
+ *
+ **/
+
+function ajax(url, data){
+  var xhr = new XMLHttpRequest();
+  xhr.onReadyStateChange = function() {
+    if(xhr.readyState === XMLHttpRequest.DONE) {
+      if(xhr.status === 200) {
+        var data = JSON.parse(xhr.responseText);
+        console.log(data);
+      }
+    }
+  }
+  xhr.open('POST', url, true);
+  xhr.send(JSON.stringify(data));
+}
