@@ -191,10 +191,16 @@
           %li#play
             %span.key p
             %span.usage play
+          %li#speed
+            %span.key +/-
+            %span.usage speed
 
-      %section#mode
+      %section#meta
         %strong mode:
         %span.queueMode live
+
+        %strong speed:
+        %span.speed 10
 
       %table#logger
         %thead
@@ -252,10 +258,15 @@
         focused: null,
         clearFocusTimeout: null,
 
-        pulseColor: {red: 255, green: 255, blue: 0},
-        pulseTime: 250,
+        pulseBaseTime: 10,
+        focusBaseTime: 25,
+        pulseTime: null,
+        focusTime: null,
 
-        focusTime: 1000,
+        maxSpeed: 50,
+        speed: 25,
+
+        pulseColor: {red: 255, green: 255, blue: 0},
 
         frameTime: 10,
 
@@ -269,6 +280,25 @@
           console.groupCollapsed("update: initialize");
           this.update();
           console.groupEnd();
+
+          this.setSpeed(this.speed);
+        },
+
+        increaseSpeed: function() {
+          this.setSpeed(this.speed + 1);
+        },
+
+        decreaseSpeed: function() {
+          this.setSpeed(this.speed - 1);
+        },
+
+        setSpeed: function(value) {
+          if(value > this.maxSpeed) return false;
+          if(value < 1) return false;
+          this.speed = value;
+          this.pulseTime = this.pulseBaseTime * (this.maxSpeed - this.speed + 1);
+          this.focusTime = this.focusBaseTime * (this.maxSpeed - this.speed + 1);
+          document.querySelector("#meta .speed").textContent = this.speed + "/" + this.maxSpeed;
         },
 
         update: function(logFrame=console) {
@@ -387,7 +417,7 @@
             element.animating = false;
           };
 
-          return this.animate(250, 10, callback, finished);
+          return this.animate(ColorManager.pulseTime, 10, callback, finished);
         },
 
         getInterpolatedColor: function(base, start, scale) {
@@ -489,15 +519,9 @@
         }
       }
 
-      var currentTarget;
-      var target;
-
       function playEvents() {
-        var delay = 1000,
-            currentDelay = 0;
         queuedEvents.forEach((e) => {
-          setTimeout(playEvent, currentDelay, e);
-          currentDelay += delay;
+          nowPlaying = nowPlaying.then(() => { return playEvent(e) });
         });
       }
 
@@ -520,12 +544,12 @@
 
       function toggleQueueMode() {
         if(queueMode) {
-          document.querySelector("#mode .queueMode").textContent = "live";
+          document.querySelector("#meta .queueMode").textContent = "live";
           document.body.classList.remove("mode-queued");
           document.body.classList.add("mode-live");
           queueMode = false;
         } else {
-          document.querySelector("#mode .queueMode").textContent = "queued";
+          document.querySelector("#meta .queueMode").textContent = "queued";
           document.body.classList.remove("mode-live");
           document.body.classList.add("mode-queued");
           queueMode = true;
@@ -588,6 +612,12 @@
           break;
         case 'p':
           playEvents();
+          break;
+        case '+':
+          ColorManager.increaseSpeed();
+          break;
+        case '-':
+          ColorManager.decreaseSpeed();
           break;
         }
       });
