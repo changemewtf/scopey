@@ -3,12 +3,6 @@
   %head
     %title Events
     :sass
-      =rad-background($main, $alt)
-        $shape: circle
-        $mEnd: 20px
-        $aEnd: 40px
-        background: repeating-radial-gradient($shape, $main, $main $mEnd, $alt $mEnd, $alt $aEnd)
-
       body
         padding: 2em
         font-family: Arial
@@ -80,7 +74,7 @@
           width: 16px
 
       table#logger
-        .phase
+        .phaseIcon
           text-align: center
 
         tr
@@ -116,13 +110,6 @@
           border: 1px solid black
           background: white
 
-          td.outer
-            background: rgb(255, 170, 170)
-          td.inner
-            background: rgb(170, 255, 170)
-          td.core
-            background: rgb(170, 170, 255)
-
       div.target nope
         $wid: 20px
         border-width: $wid $wid 0 $wid
@@ -132,32 +119,14 @@
         display: inline-block
         width: 500px
         height: 300px
-        //background: rgba(255, 170, 170, 1)
-        //&.currentTarget
-        //  background: rgba(255, 0, 0, 1)
-        //&.target
-        //  border-color: red
-        //  +rad-background(#F55, #FAA)
 
         #inner
           width: 75%
           height: 75%
-          //background: rgba(170, 255, 170, 1)
-          //&.currentTarget nope
-          //  background: rgba(0, 255, 0, 1)
-          //&.target nope
-          //  border-color: green
-          //  +rad-background(#5F5, #AFA)
 
           #core
             width: 75%
             height: 75%
-            //background: rgba(170, 170, 255, 1)
-            //&.currentTarget nope
-            //  background: rgba(0, 0, 255, 1)
-            //&.target nope
-            //  border-color: blue
-            //  +rad-background(#55F, #AAF)
 
       #outer
         position: relative
@@ -205,7 +174,7 @@
       %table#logger
         %thead
           %tr
-            %td.phase
+            %td.phase{colspan: 2} phase
             %td.event event
             %td.currentTarget handled by
             %td.target target
@@ -228,24 +197,48 @@
               %input{"type"=>"checkbox","data-event"=>evt,"data-element"=>el,"data-phase"=>"bubble"}
 
 
-    // only need build
+    // FIXME only need build()
     %script= javascript
 
     :javascript
       var controls = document.getElementById("controls");
       var logger = document.getElementById("logger");
 
+      var colors = {
+        // PLAIN RGB SCHEME
+        // light
+        lightRed: { red: 255, green: 170, blue: 170 },
+        lightGreen: { red: 170, green: 255, blue: 170 },
+        lightBlue: { red: 170, green: 170, blue: 255 },
+        // heavy
+        red: { red: 255, green: 0, blue: 0 },
+        green: { red: 0, green: 255, blue: 0 },
+        blue: { red: 0, green: 0, blue: 255 },
+
+        // COLORBLIND-SAFE SCHEME
+        // http://colorbrewer2.org/#type=qualitative&scheme=Dark2&n=3
+        // light
+        lightTeal: {red: 138, green: 234, blue: 205},
+        lightPumpkin: { red: 240, green: 178, blue: 132},
+        lightGrape: {red: 173, green: 169, blue: 222},
+
+        // light
+        teal: { red: 27, green: 158, blue: 119 },
+        pumpkin: { red: 217, green: 95, blue: 2 },
+        grape: { red: 117, green: 112, blue: 179 }
+      };
+
       var ColorManager = {
         baseColors: {
-          outer: { red: 255, green: 170, blue: 170 },
-          inner: { red: 170, green: 255, blue: 170 },
-          core: { red: 170, green: 170, blue: 255 }
+          outer: colors.lightTeal,
+          inner: colors.lightPumpkin,
+          core: colors.lightGrape
         },
 
         focusColors: {
-          outer: { red: 255, green: 0, blue: 0 },
-          inner: { red: 0, green: 255, blue: 0 },
-          core: { red: 0, green: 0, blue: 255 }
+          outer: colors.teal,
+          inner: colors.pumpkin,
+          core: colors.grape
         },
 
         outer: null,
@@ -276,6 +269,11 @@
           this.core = document.getElementById("core");
 
           this.elements = [this.outer, this.inner, this.core];
+
+          var styleSheet = document.styleSheets[0];
+          styleSheet.insertRule("td.outer, table#logger tr td.outer { background: " + RGB.toString(this.baseColors.outer) + "; }", styleSheet.rules.length);
+          styleSheet.insertRule("td.inner, table#logger tr td.inner { background: " + RGB.toString(this.baseColors.inner) + "; }", styleSheet.rules.length);
+          styleSheet.insertRule("td.core, table#logger tr td.core { background: " + RGB.toString(this.baseColors.core) + "; }", styleSheet.rules.length);
 
           console.groupCollapsed("update: initialize");
           this.update();
@@ -467,6 +465,15 @@
         };
       }
 
+      function phaseToWord(phase) {
+        switch(phase) {
+          case Event.NONE: return "none";
+          case Event.CAPTURING_PHASE: return "capture";
+          case Event.AT_TARGET: return "at target";
+          case Event.BUBBLING_PHASE: return "bubble";
+        };
+      }
+
       function logEvent(event, phase) {
         var definedPhase = {
           "capture": "⬇",
@@ -476,7 +483,8 @@
         var logged = build("tr", {
           class: "loggedEvent",
           contains: [
-            build("td", { class: "phase", text: phaseToIcon(event.eventPhase) }),
+            build("td", { class: "phaseIcon", text: phaseToIcon(event.eventPhase) }),
+            build("td", { class: "phaseName", text: phaseToWord(event.eventPhase) }),
             build("td", { class: "type", text: event.type }),
             build("td", {
               class: "currentTarget " + event.currentTarget.id,
