@@ -13,7 +13,11 @@
         #wrapper .slide {
           font-size: 20px; }
       
-      #tooltip .word, #tooltip .definition {
+      footer {
+        font-size: 12px;
+        text-align: right; }
+      
+      #tooltip div.word, #tooltip div.definition {
         box-sizing: border-box;
         display: inline-block;
         height: 2em;
@@ -21,13 +25,18 @@
         border-top: 0;
         vertical-align: top;
         padding: 5px; }
-      #tooltip .word {
-        width: 50%;
+      #tooltip div.word {
+        width: 30%;
         background: cornflowerblue;
-        border-right: 0;
-        text-align: center; }
-      #tooltip .definition {
-        width: 50%;
+        border-right: 0; }
+        #tooltip div.word span {
+          color: transparent; }
+        #tooltip div.word span.shown {
+          color: black; }
+          #tooltip div.word span.shown span {
+            color: black; }
+      #tooltip div.definition {
+        width: 70%;
         background: aliceblue;
         border-left: 0;
         font-family: Lato, Verdana; }
@@ -41,73 +50,95 @@
         #slides .word {
           cursor: pointer;
           display: inline-block; }
-          #slides .word:hover {
-            background: wheat; }
+        #slides span.active {
+          background: wheat; }
     </style>
   </head>
   <body>
     <div id='wrapper'>
+      <h1>The Scriptoscope</h1>
       <div id='slides'></div>
       <div id='tooltip'></div>
+      <footer>© no one in particular, circa 2000</footer>
     </div>
-    <br>
-    * write the definition, THEN click and drag to select, then click Define
-    <script>var data = {"slides":[{"code":"var myHomeTown = \"Hades\";\nconsole.log(myHomeTown);\n"}]};</script>
+    <script>var data = {"slides":[{"code":"var myHomeTown = \"Hades\";\nconsole.log(myHomeTown);\n","saved":{"tag":"section","class":"code","children":[{"tag":"p","class":"line","children":[{"tag":"span","class":"word","definition":"a line where we declare and define a local variable","children":[{"tag":"span","class":"word","definition":"a variable declaration statement","children":[{"tag":"span","class":"word","definition":"the var keyword","children":[{"data":"var","children":[]}]},{"data":" ","children":[]},{"tag":"span","class":"word","definition":"an identifier that represents the variable name","children":[{"data":"myHomeTown","children":[]}]}]},{"data":" ","children":[]},{"tag":"span","class":"word","definition":"the assignment operator","children":[{"data":"=","children":[]}]},{"data":" ","children":[]},{"tag":"span","class":"word","definition":"an expression on the right-hand side of an assignment","children":[{"tag":"span","class":"word","definition":"a string literal","children":[{"data":"\"Hades\"","children":[]}]}]},{"data":";","children":[]}]}]},{"tag":"p","class":"line","children":[{"tag":"span","class":"word","definition":"method call with one parameter","children":[{"tag":"span","class":"word","definition":"a global variable referring to the browser's developer console","children":[{"data":"console","children":[]}]},{"tag":"span","class":"word","definition":"the dot operator","children":[{"data":".","children":[]}]},{"tag":"span","class":"word","definition":"the log method of the console object","children":[{"data":"log","children":[]}]},{"data":"(","children":[]},{"tag":"span","class":"word","definition":"local variable passed as parameter","children":[{"data":"myHomeTown","children":[]}]},{"data":");","children":[]}]}]}]}}]};</script>
     <script>
       function build(tag, options) {
-        var el = document.createElement(tag);
-        if(options.className) { el.className = options.className; }
-        if(options.id) { el.id = options.id; }
-        if(options.contains) {
-          options.contains.forEach(function(child) {
-            el.appendChild(child);
-          });
+        var element = document.createElement(tag),
+            copy    = (k,v) => element[k] = v,
+            recipes = {
+              className:   copy,
+              id:          copy,
+              contains:    (k,v) => { v.forEach((c) => element.appendChild(c)) },
+              text:        (k,v) => { element.textContent = v },
+              class:       (k,v) => { element.className = v },
+              textContent: copy,
+              onclick:     copy
+            };
+      
+        for (var k in recipes) {
+          if(options[k]) { recipes[k](k, options[k]); }
         }
-        if(options.text) { el.textContent = options.text; }
-        if(options.onclick) { el.onclick = options.onclick.bind(this); }
-        return el;
+        return element;
       }
       
-      var Tooltip = {
-        element: document.getElementById("tooltip"),
-      
-        toggle: function(action, word, definition) {
-          this.element[action](word);
-          this.element[action](definition);
-        },
-      
-        createTooltipListeners: function(element, word, definition) {
-          element.addEventListener("mouseover", (event) => {
-            this.toggle("appendChild", word, definition);
-          }, true);
-          element.addEventListener("mouseout", (event) => {
-            this.toggle("removeChild", word, definition);
-          }, true);
-        },
-      
-        createHover: function(word, definition) {
-          var hover = build("span", {className: "word"});
-          this.createTooltipListeners(
-            hover,
-            build("div", {className: "word", text: word}),
-            build("div", {className: "definition", text: definition})
-          );
-          return hover;
-        },
-      };
+      /*
+       * Slides
+       *
+       * Displays documents on the page.
+       *
+       * Call initialize() to get started.
+       *
+       **/
       
       var Slides = {
-        slides: data["slides"],
-        element: document.getElementById("slides"),
+        slides: [],
+        element: null,
+      
+        slideAttr: "data-slide-index",
       
         initialize: function() {
-          this.slides.forEach(function(slide) {
+          this.slides = data["slides"];
+          this.element = document.getElementById("slides");
+          this.slides.forEach(this.buildSlide.bind(this));
+      
+          TooltipManager.initialize();
+        },
+      
+        buildSlide: function(slide, index) {
+          if(slide.saved) {
+            var section = Serializer.rebuild(slide.saved);
+          } else {
             var section = build("section", {className: "code"});
             slide.code.split("\n").forEach(function(line) {
               section.innerHTML += '<p class="line">' + line + '</p>';
             });
-            this.element.appendChild(section);
-          }.bind(this));
+          }
+          section.setAttribute(this.slideAttr, index);
+          this.element.appendChild(section);
+        },
+      
+        addWord: function(elWord, definition, save=true) {
+          TooltipManager.watch(elWord, definition);
+          elWord.definition = definition;
+          if(save) this.update(elWord);
+        },
+      
+        update: function(elWord) {
+          var elSlide = this.findSlide(elWord),
+              index   = elSlide.getAttribute(this.slideAttr),
+              slide   = this.slides[index];
+          slide.saved = Serializer.save(elSlide);
+          this.sync();
+        },
+      
+        sync: function(data, index) {
+          ajax("/save", this.slides);
+        },
+      
+        findSlide: function(el) {
+          if(el.hasAttribute(this.slideAttr)) return el;
+          else return this.findSlide(el.parentNode);
         },
       
         appendControls: function(controls) {
@@ -115,20 +146,249 @@
         }
       };
       
-      /* Split, enclose, and reattach nodes with surgical accuracy. */
-      
-      var NodeChirurgeon = {
-        wrapSelection: function(wrapper, sel) {
-          var [start, end] = this.prepareBoundaries(sel);
-      
-          start.parentNode.insertBefore(wrapper, start);
-      
-          this.walkThroughSiblings(start, end, function(node) {
-            wrapper.appendChild(node);
-          });
+      var Serializer = {
+        rebuild: function(saved, index) {
+          if(saved.tag) var n = document.createElement(saved.tag);
+          else if(saved.data) var n = document.createTextNode(saved.data);
+          if(saved.class) n.className = saved.class;
+          saved.children.forEach((c) => n.appendChild(this.rebuild(c)));
+          if(saved.definition) Slides.addWord(n, saved.definition, false);
+          return n;
         },
       
-        walkThroughSiblings: function(start, end, callback) {
+        save: function(node) {
+          return {
+            tag: node.tagName,
+            class: node.className,
+            definition: node.definition,
+            data: node.data,
+            children: node.childNodes.map((n) => this.save(n))
+          };
+        }
+      };
+      
+      
+      /*
+       * Editor
+       *
+       * Enable live creation of new definition Words.
+       *
+       **/
+      
+      var Editor = {
+        initialize: function() {
+          this.buildControls();
+          Slides.appendControls(this.defControls);
+        },
+      
+        addDefinition: function(event) {
+          var elWord = build("span", {className: "word"}),
+              definition = this.defInput.value;
+          NodeChirurgeon.wrapSelection(elWord, document.getSelection());
+          Slides.addWord(elWord, definition);
+          this.defInput.value = "";
+        },
+      
+        buildControls: function() {
+          this.defButton   = build("button", {
+                               id: "add-definition",
+                               textContent: "Define",
+                               onclick: this.addDefinition.bind(this)
+                             });
+          this.defInput    = build("input", {
+                               id: "write-definition"
+                             });
+          this.defControls = build("div", {
+                               id: "definition-controls",
+                               contains: [this.defInput, this.defButton]
+                             });
+        }
+      };
+      
+      
+      /*
+       * TooltipManager
+       *
+       * Given an element and a definition, make a hover popup for the element.
+       *
+       * By passing true to Element.addEventListener(), we cause element to listen
+       * in "capture" mode, which means the callback will be triggered as the event
+       * descends down the hierarchy rather than on its way back up.
+       *
+       * console.log(generateMessage(data));  |  1  <- firstCaughtBy
+       *             generateMessage(data)    |  2
+       *                             data     V  3
+       *
+       * This allows us to generate tooltips in order "on the way down", without
+       * ever having to keep track of the tooltips ourselves.
+       *
+       **/
+      
+      var TooltipManager = {
+        element: null,
+        active: null,
+      
+        initialize: function() {
+          this.element = document.getElementById("tooltip");
+        },
+      
+        watch: function(element, definition) {
+          element.addEventListener("mouseover", (event) => {
+            if(!event.firstCaughtBy) { event.firstCaughtBy = element; }
+            this.push(element, definition, event.firstCaughtBy);
+          }, true);
+      
+          element.addEventListener("mouseout", (event) => {
+            this.pop(element);
+          }, true);
+        },
+      
+        push: function(element, definition, elOuter) {
+          this.element.appendChild(
+            this.build(
+              AlignedWord.buildElement(element, elOuter),
+              definition
+            )
+          );
+          this.setActive(element);
+        },
+      
+        pop: function(element) {
+          this.element.removeChild(this.element.lastChild);
+          this.setActive(null);
+        },
+      
+        setActive: function(element) {
+          if(this.active) { this.active.classList.remove("active"); }
+          if(element) {
+            this.active = element;
+            element.classList.add("active");
+          } else {
+            this.active = null;
+          }
+        },
+      
+        build: function(elWord, definition) {
+          return build("div", {
+            className: "tooltip",
+            contains: [
+              build("div", {className: "word", contains: [elWord]}),
+              build("div", {className: "definition", text: definition})
+            ]
+          })
+        }
+      };
+      
+      
+      /*
+       * AlignedWord
+       *
+       * Creates horizontally aligned nested Tooltips by reproducing their entire
+       * node tree ancestry. For example:
+       *
+       * ACTUAL TOOLTIP CONTENTS:
+       *
+       * console.log(generateMessage(data));    <-- outer
+       * console.log(generateMessage(data));
+       * console.log(generateMessage(data));    <-- target
+       *
+       * But each Word gets its own element, and we can use color: transparent
+       * to hide the text of ancestors in the Tooltip for a given Word, so the
+       * Tooltips end up looking like this:
+       *
+       * APPARENT TOOLTIP CONTENTS:
+       *
+       * console.log(generateMessage(data));    <-- outer
+       *             generateMessage(data)
+       *                             data       <-- target
+       **/
+      
+      var AlignedWord = {
+        buildElement: function(target, outer) {
+          return deepCopy(outer, function(copy, original) {
+            if(original === target) {
+              copy.className += " shown";
+            }
+          });
+        }
+      };
+      
+      function deepCopy(original, editClone) {
+        // copy classes, IDs, but not child text or elements
+        var copy = original.cloneNode();
+        editClone(copy, original);
+        original.childNodes.forEach(function(child) {
+          copy.appendChild(deepCopy(child, editClone));
+        });
+        return copy;
+      }
+      
+      
+      /*
+       * NodeChirurgeon
+       *
+       * Divide, extract, enclose, and transplant nodes with surgical accuracy.
+       *
+       * Given the following selection on a <p> with one text node child,
+       * and a wrapper <span></span>:
+       *                  ___________
+       * <p> "console.log(myAdminCred);" </p>
+       *
+       * The Chirurgeon will produce:
+       *
+       * <p>
+       *     "console.log("
+       *     <span>
+       *         "myAdminCred"
+       *     </span>
+       *     ");"
+       * </p>
+       *
+       **/
+      
+      var NodeChirurgeon = {
+        wrapSelection: function(wrapper, selection) {
+          var [start, end] = Scalpel.makeBoundaryIncisions(selection);
+          Suture.transplantNodes(wrapper, start, end);
+        }
+      };
+      
+      var Scalpel = {
+        makeBoundaryIncisions: function(selection) {
+          var start = this.cut(selection.anchorNode, selection.anchorOffset),
+              end   = this.cut(selection.focusNode, selection.focusOffset);
+          if(this.userDraggedRightToLeft(start, end)) {
+            return [end, start];
+          } else {
+            return [start, end];
+          }
+        },
+      
+        cut: function(node, cutIndex) {
+          if(cutIndex > 0 && cutIndex < node.length) {
+            // selected in the middle: Hello[, world!]
+            return node.splitText(cutIndex);
+          } else {
+            // selected at a boundary: [Hello, world!]
+            return node;
+          }
+        },
+      
+        userDraggedRightToLeft: function(a, b) {
+          // http://stackoverflow.com/a/23512678/16034
+          return a.compareDocumentPosition(b) === Node.DOCUMENT_POSITION_PRECEDING;
+        }
+      };
+      
+      var Suture = {
+        transplantNodes: function(newParent, start, end) {
+          // Insert the new parent first, before we mess with the DOM.
+          start.parentNode.insertBefore(newParent, start);
+          // Transplant all siblings between start & end to the new parent.
+          this.walkSiblings(start, end, (node) => newParent.appendChild(node));
+        },
+      
+        walkSiblings: function(start, end, callback) {
           var cache, cursor = start;
           do {
             // cache the next sibling, since we're expecting to move
@@ -137,69 +397,32 @@
             callback(cursor);
             cursor = cache;
           } while (cursor != end);
-        },
-      
-        prepareBoundaries: function(sel) {
-          var start = this.prepare(sel.anchorNode, sel.anchorOffset);
-          var end = this.prepare(sel.focusNode, sel.focusOffset);
-          if(this.userDraggedRightToLeft(start, end)) {
-            return [end, start];
-          } else {
-            return [start, end];
-          }
-        },
-      
-        // http://stackoverflow.com/a/23512678/16034
-        userDraggedRightToLeft: function(a, b) {
-          return a.compareDocumentPosition(b) === Node.DOCUMENT_POSITION_PRECEDING;
-        },
-      
-        prepare: function(node, offset) {
-          if(offset > 0 && offset < node.length) {
-            // User selected in the middle of a text node: Hello|, world!|
-            return node.splitText(offset);
-          } else {
-            // User selected at start/end of a text node: |Hello, world!|
-            return node;
-          }
         }
       };
       
-      var Editor = {
-        except: function(key) {
-          console.log("Exception: %s", key);
-        },
       
-        addDefinition: function() {
-          var selection = document.getSelection();
-          var word = selection.toString();          if(word.length == 0) { throw "no selection"; }
-          var definition = this.defInput.value;     if(definition.length == 0) { throw "no definition"; }
-          this.defInput.value = "";
+      /*
+       * AJAX
+       *
+       **/
       
-          NodeChirurgeon.wrapSelection(
-            Tooltip.createHover(word, definition),
-            selection
-          );
-        },
-      
-        activate: function() {
-          this.defButton = build("button", {
-            id: "add-definition",
-            text: "Define",
-            onclick: this.addDefinition.bind(this)
-          });
-          this.defInput = build("input", {id: "write-definition"});
-          this.defControls = build("div", {
-            id: "definition-controls",
-            contains: [this.defInput, this.defButton]
-          });
-      
-          Slides.appendControls(this.defControls);
+      function ajax(url, data){
+        var xhr = new XMLHttpRequest();
+        xhr.onReadyStateChange = function() {
+          if(xhr.readyState === XMLHttpRequest.DONE) {
+            if(xhr.status === 200) {
+              var data = JSON.parse(xhr.responseText);
+              console.log(data);
+            }
+          }
         }
-      };
-      
+        xhr.open('POST', url, true);
+        xhr.send(JSON.stringify(data));
+      }
+    </script>
+    <script>
       Slides.initialize();
-      Editor.activate();
+      //Editor.initialize();
     </script>
   </body>
 </html>

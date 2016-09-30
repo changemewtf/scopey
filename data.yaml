@@ -10,8 +10,51 @@ slides:
         - tag: p
           class: line
           children:
-            - data: var myHomeTown = "Hades";
-              children: []
+            - tag: span
+              class: word
+              definition: 'a line where we declare and define a local variable'
+              children:
+                - tag: span
+                  class: word
+                  definition: 'a variable declaration statement'
+                  children:
+                    - tag: span
+                      class: word
+                      definition: 'the var keyword'
+                      children:
+                        - data: 'var'
+                          children: []
+                    - data: ' '
+                      children: []
+                    - tag: span
+                      class: word
+                      definition: 'an identifier that represents the variable name'
+                      children:
+                        - data: myHomeTown
+                          children: []
+                - data: ' '
+                  children: []
+                - tag: span
+                  class: word
+                  definition: 'the assignment operator'
+                  children:
+                    - data: '='
+                      children: []
+                - data: ' '
+                  children: []
+                - tag: span
+                  class: word
+                  definition: 'an expression on the right-hand side of an assignment'
+                  children:
+                    - tag: span
+                      class: word
+                      definition: 'a string literal'
+                      children:
+                        - data: '"Hades"'
+                          children: []
+                - data: ';'
+                  children: []
+
         - tag: p
           class: line
           children:
@@ -19,7 +62,25 @@ slides:
               class: word
               definition: method call with one parameter
               children:
-                - data: 'console.log('
+                - tag: span
+                  class: word
+                  definition: a global variable referring to the browser's developer console
+                  children:
+                    - data: 'console'
+                      children: []
+                - tag: span
+                  class: word
+                  definition: 'the dot operator'
+                  children:
+                    - data: '.'
+                      children: []
+                - tag: span
+                  class: word
+                  definition: the log method of the console object
+                  children:
+                    - data: 'log'
+                      children: []
+                - data: '('
                   children: []
                 - tag: span
                   class: word

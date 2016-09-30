@@ -37,7 +37,6 @@ var Slides = {
     this.element = document.getElementById("slides");
     this.slides.forEach(this.buildSlide.bind(this));
 
-    Editor.initialize();
     TooltipManager.initialize();
   },
 

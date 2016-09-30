@@ -5,13 +5,14 @@
     %style{type: "text/css"}= sass
   %body
     #wrapper
+      %h1 The Scriptoscope
       #slides
       #tooltip
-    %br
-    * write the definition, THEN click and drag to select, then click Define
+      %footer © no one in particular, circa 2000
 
     %script= "var data = #{json};"
     %script= javascript
 
     :javascript
       Slides.initialize();
+      //Editor.initialize();
