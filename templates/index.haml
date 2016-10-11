@@ -1,18 +1,18 @@
 !!!html
 %html{lang: "en"}
   %head
-    %title The Scopeoscope
+    %title scopey
     %style{type: "text/css"}= sass
   %body
     #wrapper
-      %h1 The Scriptoscope
+      %h1 scopey
       #slides
       #tooltip
-      %footer © no one in particular, circa 2000
 
     %script= "var data = #{json};"
     %script= javascript
 
     :javascript
       Slides.initialize();
+      TooltipManager.initialize();
       //Editor.initialize();

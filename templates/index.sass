@@ -3,7 +3,7 @@ body
   font-family: Courier, monospace
 
 #wrapper
-  width: 960px
+  width: 1024px
   margin: 0 auto
 
   .slide
@@ -17,16 +17,18 @@ footer
   div.word, div.definition
     box-sizing: border-box
     display: inline-block
-    height: 2em
+    height: 35px
     border: 1px solid black
     border-top: 0
     vertical-align: top
     padding: 5px
 
   div.word
-    width: 30%
+    width: 55%
     background: cornflowerblue
     border-right: 0
+    overflow: auto
+    text-overflow: clip
 
     span
       color: transparent
@@ -38,10 +40,11 @@ footer
         color: black
 
   div.definition
-    width: 70%
+    width: 45%
     background: aliceblue
     border-left: 0
     font-family: Lato, Verdana
+    font-size: 14px
 
 #slides
   padding: 1em
@@ -52,9 +55,29 @@ footer
     p.line
       margin: 0 0 10px 0
 
+  .indent
+    height: 16px
+    line-height: 18px
+    width: 28px
+
   .word
     cursor: pointer
     display: inline-block
+
+    p.line
+      margin-top: 10px
+
+    &.keyword
+      color: #CC1461
+    &.identifier
+      //color: #1089A1
+      color: black
+      &.builtin
+        color: #1045A1
+    &.string.literal
+      color: #8F820E
+    &.property.name
+      color: #229944
 
   span.active
     background: wheat

@@ -1,3 +1,3 @@
-require 'resume'
+require "scopeoscope"
 
 run Application.new

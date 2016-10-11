@@ -1,0 +1,265 @@
+slides:
+  - saved:
+      tag: section
+      class: code
+      children:
+        - tag: p
+          class: line
+          children:
+
+            - tag: span
+              class: word
+              definition: a line where we declare and define a local variable
+              children:
+                - tag: span
+                  class: word
+                  definition: a variable declaration statement
+                  children:
+                    - tag: span
+                      class: word keyword
+                      definition: the var keyword
+                      children:
+                        - data: var
+                          children: []
+                    - data: ' '
+                      children: []
+                    - tag: span
+                      class: word identifier
+                      definition: an identifier representing the variable name
+                      children:
+                        - data: myHomeTown
+                          children: []
+                - data: ' '
+                  children: []
+                - tag: span
+                  class: word operator
+                  definition: the assignment operator
+                  children:
+                    - data: '='
+                      children: []
+                - data: ' '
+                  children: []
+                - tag: span
+                  class: word
+                  definition: an expression on the right-hand side of an assignment
+                  children:
+                    - tag: span
+                      class: word builtin identifier
+                      definition: a browser function that asks the user for input
+                      children:
+                        - data: prompt
+                          children: []
+                    - data: '('
+                      children: []
+                    - tag: span
+                      class: word string literal
+                      definition: a string literal
+                      children:
+                        - data: '"Where are you from?"'
+                          children: []
+                    - data: ')'
+                      children: []
+                - data: ';'
+                  children: []
+
+        - tag: p
+          class: line
+          children:
+            - tag: span
+              class: word
+              definition: "the first line of an 'if' statement"
+              children:
+                - tag: span
+                  class: word keyword
+                  definition: "the 'if' keyword"
+                  children:
+                    - data: "if"
+                      children: []
+                - data: (
+                  children: []
+                - tag: span
+                  class: word identifier
+                  definition: an identifier representing a local variable
+                  children:
+                    - data: myHomeTown
+                      children: []
+                - data: " "
+                  children: []
+                - tag: span
+                  class: word operator
+                  definition: "the 'strict equality', or 'identity' operator"
+                  children:
+                    - data: ===
+                      children: []
+                - data: " "
+                  children: []
+                - tag: span
+                  class: word string literal
+                  definition: a string literal
+                  children:
+                    - data: '"Hadestown"'
+                      children: []
+                - data: ) {
+                  children: []
+
+        - tag: p
+          class: line
+          children:
+            - tag: span
+              class: word indent
+              definition: one indent level
+              children: []
+
+            - tag: span
+              class: word identifier
+              definition: an identifier representing a function name
+              children:
+                - data: sendCourier
+                  children: []
+
+            - data: (
+              children: []
+
+            - tag: span
+              class: word
+              definition: a JavaScript Object literal
+              children:
+                - data: "{ "
+                  children: []
+
+                - tag: span
+                  class: word
+                  definition: a JavaScript object key/value pair
+                  children:
+
+                  - tag: span
+                    class: word property name
+                    definition: an object property name
+                    children:
+                      - data: name
+                        children: []
+                  - data: ": "
+                    children: []
+                  - tag: span
+                    class: word property value string literal
+                    definition: a string literal, also the value to the "name" property
+                    children:
+                      - data: '"Persephone"'
+                        children: []
+
+                - data: ", "
+                  children: []
+
+                - tag: span
+                  class: word
+                  definition: a JavaScript object key/value pair
+                  children:
+
+                  - tag: span
+                    class: word property name
+                    definition: an object property name
+                    children:
+                      - data: message
+                        children: []
+                  - data: ": "
+                    children: []
+                  - tag: span
+                    class: word property value string literal
+                    definition: a string literal, also the value to the "message" property
+                    children:
+                      - data: '"A visitor!"'
+                        children: []
+
+                - data: " }"
+                  children: []
+
+            - data: )
+              children: []
+
+        - tag: p
+          class: line
+          children:
+            - data: "} "
+              children: []
+
+            - tag: span
+              class: word keyword
+              definition: "the 'else' keyword"
+              children:
+                - data: else
+                  children: []
+
+            - data: " {"
+              children: []
+
+        - tag: p
+          class: line
+          children:
+            - tag: span
+              class: word indent
+              definition: one indent level
+              children: []
+            - tag: span
+              class: word
+              definition: a method call with one parameter
+              children:
+                - tag: span
+                  class: word builtin identifier
+                  definition: a global variable referring to the browser's developer console
+                  children:
+                    - data: console
+                      children: []
+                - tag: span
+                  class: word
+                  definition: 'the dot operator'
+                  children:
+                    - data: '.'
+                      children: []
+                - tag: span
+                  class: word builtin identifier
+                  definition: the log method of the console object
+                  children:
+                    - data: log
+                      children: []
+
+                - data: '('
+                  children: []
+
+                - tag: span
+                  class: word
+                  definition: an expression whose value will be passed as a parameter
+                  children:
+
+                    - tag: span
+                      class: word identifier
+                      definition: a local variable, which will be concatenated with the literal
+                      children:
+                        - data: myHomeTown
+                          children: []
+
+                    - data: " "
+                      children: []
+                    - tag: span
+                      class: word operator
+                      definition: the plus operator, which will concatenate two strings
+                      children:
+                        - data: "+"
+                          children: []
+                    - data: " "
+                      children: []
+
+                    - tag: span
+                      class: word string literal
+                      definition: a string literal
+                      children:
+                        - data: '"? Nice place!"'
+                          children: []
+
+                - data: ');'
+                  children: []
+
+        - tag: p
+          class: line
+          children:
+            - data: "} "
+              children: []
